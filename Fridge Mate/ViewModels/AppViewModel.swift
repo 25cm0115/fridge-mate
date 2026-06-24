@@ -2,7 +2,8 @@
 //  AppViewModel.swift
 //  Fridge Mate
 //
-//  Created by cmStudent on 2026/05/19.
+//  Created by SURINA.
+//  Updated: Gemini AIレシピ提案機能を追加
 //
 
 import Foundation
@@ -10,6 +11,8 @@ import SwiftUI
 import Combine
 
 class AppViewModel: ObservableObject {
+    
+    // MARK: - 食材・買い物リスト（既存）
     
     @Published var ingredients: [Ingredient] = [
         Ingredient(name: "豆腐", amount: "1丁", daysLeft: 1, category: .other),
@@ -19,6 +22,16 @@ class AppViewModel: ObservableObject {
     ]
     
     @Published var shoppingItems: [ShoppingItem] = []
+    
+    // MARK: - AI提案（新規追加）
+    
+    @Published var aiRecipes: [Recipe] = []      // AIが提案したレシピ
+    @Published var isLoadingAI: Bool = false      // ローディング中フラグ
+    @Published var aiError: String? = nil         // エラーメッセージ
+    
+    private let geminiService = GeminiService()   // Gemini APIサービス
+    
+    // MARK: - 固定レシピ（既存）
     
     let recipes: [Recipe] = [
         Recipe(
@@ -62,6 +75,38 @@ class AppViewModel: ObservableObject {
         )
     ]
     
+    // MARK: - AI提案メソッド（新規追加）
+    
+    /// Gemini APIを呼び出して、今ある食材でのレシピ提案を取得する
+    func fetchAIRecipes() {
+        // 食材が1つもない場合は何もしない
+        guard !ingredients.isEmpty else {
+            aiError = "食材を追加してからAI提案を使ってください"
+            return
+        }
+        
+        isLoadingAI = true
+        aiError = nil
+        aiRecipes = []
+        
+        Task {
+            do {
+                let recipes = try await geminiService.suggestRecipes(ingredients: ingredients)
+                await MainActor.run {
+                    self.aiRecipes = recipes
+                    self.isLoadingAI = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.aiError = error.localizedDescription
+                    self.isLoadingAI = false
+                }
+            }
+        }
+    }
+    
+    // MARK: - 既存メソッド（変更なし）
+    
     var nearExpirationIngredients: [Ingredient] {
         ingredients.filter { $0.daysLeft <= 2 }
     }
@@ -83,6 +128,7 @@ class AppViewModel: ObservableObject {
     func deleteIngredient(at offsets: IndexSet) {
         ingredients.remove(atOffsets: offsets)
     }
+    
     func deleteIngredient(id: UUID) {
         ingredients.removeAll { $0.id == id }
     }
@@ -125,7 +171,6 @@ class AppViewModel: ObservableObject {
         guard let index = shoppingItems.firstIndex(where: { $0.id == item.id }) else {
             return
         }
-        
         shoppingItems[index].isChecked.toggle()
     }
     
@@ -147,3 +192,4 @@ class AppViewModel: ObservableObject {
         }
     }
 }
+

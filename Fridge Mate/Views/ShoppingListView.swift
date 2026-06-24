@@ -2,7 +2,7 @@
 //  ShoppingListView.swift
 //  Fridge Mate
 //
-//  Created by cmStudent on 2026/05/19.
+//  Created by SURINA.
 //
 
 import SwiftUI
