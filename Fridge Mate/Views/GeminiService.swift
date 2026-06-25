@@ -10,7 +10,7 @@ import Foundation
 struct GeminiService {
     
     // ★ここにGemini APIキー
-    private let apiKey = "AQ.Ab8RN6K4ZQlNopa80rHAj0gmv5VUzoJkNj2lrXZ6qsJEdXsYvQ"
+    private let apiKey = "YOUR_GEMINI_API_KEY_HERE"
     
     // 使用するモデル（gemini-2.5-flashは無料枠あり）
     private let model = "gemini-2.5-flash"
